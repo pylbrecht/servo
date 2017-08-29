@@ -2517,8 +2517,9 @@ impl Fragment {
             return true
         }
 
-        // Fixed position blocks always create stacking contexts.
-        if self.style.get_box().position == position::T::fixed {
+        // Fixed position and sticky position always create stacking contexts.
+        if self.style().get_box().position == position::T::fixed ||
+           self.style().get_box().position == position::T::sticky  {
             return true
         }
 
