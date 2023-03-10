@@ -3,8 +3,35 @@ from typing import Any, Mapping
 
 import pytest
 import webdriver
-from webdriver.bidi.error import InvalidArgumentException, NoSuchFrameException
+from webdriver.bidi.error import (
+    InvalidArgumentException,
+    NoSuchFrameException,
+    NoSuchScriptException,
+)
 from webdriver.bidi.modules.script import ContextTarget
+
+
+@pytest.fixture
+async def add_preload_script(bidi_session):
+    preload_scripts_ids = []
+
+    async def add_preload_script(function_declaration, arguments=None, sandbox=None):
+        script = await bidi_session.script.add_preload_script(
+            function_declaration=function_declaration,
+            arguments=arguments,
+            sandbox=sandbox,
+        )
+        preload_scripts_ids.append(script)
+
+        return script
+
+    yield add_preload_script
+
+    for script in reversed(preload_scripts_ids):
+        try:
+            await bidi_session.script.remove_preload_script(script=script)
+        except (InvalidArgumentException, NoSuchScriptException):
+            pass
 
 
 @pytest.fixture
@@ -113,3 +140,33 @@ def add_and_remove_iframe(bidi_session, inline):
 
         return frame_id
     return closed_frame
+
+
+@pytest.fixture
+def load_pdf(bidi_session, test_page_with_pdf_js, top_context):
+    """Load a PDF document in the browser using pdf.js"""
+    async def load_pdf(encoded_pdf_data, context=top_context["context"]):
+        url = test_page_with_pdf_js(encoded_pdf_data)
+
+        await bidi_session.browsing_context.navigate(
+            context=context, url=url, wait="complete"
+        )
+
+    return load_pdf
+
+
+@pytest.fixture
+def get_pdf_content(bidi_session, top_context, load_pdf):
+    """Load a PDF document in the browser using pdf.js and extract content from the document"""
+    async def get_pdf_content(encoded_pdf_data, context=top_context["context"]):
+        await load_pdf(encoded_pdf_data=encoded_pdf_data, context=context)
+
+        result = await bidi_session.script.call_function(
+            function_declaration="""() => { return window.getText()}""",
+            target=ContextTarget(context),
+            await_promise=True,
+        )
+
+        return result
+
+    return get_pdf_content
