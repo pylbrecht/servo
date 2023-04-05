@@ -154,8 +154,14 @@
     @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [[1, 0], 0]});
     @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [[1, 0], [0, Infinity]]});
     @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: []});
+    @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [1]});
+    @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [1, 2, 3, 4]});
+    @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [[], []]});
+    @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [[1, 2], []]});
+    @assert throws TypeError new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [[], [1, 2]]});
     // This should not throw an error
     ctx.filter = new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [[]]});
+    ctx.filter = new CanvasFilter({filter: "convolveMatrix", kernelMatrix: [[1]]});
 
 - name: 2d.filter.canvasFilterObject.componentTransfer.linear.tentative
   desc: Test pixels on CanvasFilter() componentTransfer with linear type
@@ -341,6 +347,27 @@
         _assertPixelApprox(canvas, 5, 5, outputColor[0],outputColor[1],outputColor[2],255, 2);
     }
 
+- name: 2d.filter.canvasFilterObject.dropShadow.exceptions.tentative
+  desc: Test exceptions on CanvasFilter() dropShadow object
+  code: |
+    @unroll @assert new CanvasFilter({\
+        filter: 'dropShadow', \
+        <dx | dy | stdDeviation | floodOpacity>: \
+        <10 | -1 | 0.5 | null | true | false | [] | [20] | '30'>});
+    @unroll @assert new CanvasFilter({\
+        filter: 'dropShadow', \
+        <floodColor>: \
+        <'red' | 'canvas' | 'rgba(4, -3, 0.5, 1)' | '#aabbccdd' | '#abcd'>});
+
+    @unroll @assert throws TypeError new CanvasFilter({\
+        filter: 'dropShadow', \
+        <dx | dy | stdDeviation | floodOpacity>: \
+        <NaN | Infinity | -Infinity | undefined | 'test' | {} | [1, 2]>});
+    @unroll @assert throws TypeError new CanvasFilter({\
+        filter: 'dropShadow', \
+        <floodColor>: \
+        <'test' | 'rgba(NaN, 3, 2, 1)' | 10 | undefined | null | NaN>});
+
 - name: 2d.filter.canvasFilterObject.turbulence.inputTypes.tentative
   desc: Test exceptions on CanvasFilter() turbulence object
   code: |
@@ -441,7 +468,7 @@
 
     for (testCase of errorTestCases) {
       const filterOptions = {...{filter: "turbulence"}, ...testCase};
-      @assert throws TypeError CanvasFilter(filterOptions);
+      @assert throws TypeError new CanvasFilter(filterOptions);
     }
 
     for (testCase of workingTestCases) {
