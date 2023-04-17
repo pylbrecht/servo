@@ -38,6 +38,17 @@ class InvalidArgumentException(BidiException):
 class NoSuchFrameException(BidiException):
     error_code = "no such frame"
 
+class NoSuchHandleException(BidiException):
+    error_code = "no such handle"
+
+
+class NoSuchNodeException(BidiException):
+    error_code = "no such node"
+
+
+class NoSuchScriptException(BidiException):
+    error_code = "no such script"
+
 
 class UnknownCommandException(BidiException):
     error_code = "unknown command"
