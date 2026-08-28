@@ -4376,6 +4376,23 @@ impl Document {
         self.count_node_list(|n| Document::is_element_in_get_by_name(n, name))
     }
 
+    pub(crate) fn elements_by_name_iter<'a>(
+        &self,
+        no_gc: &'a NoGC,
+        name: &DOMString,
+    ) -> impl Iterator<Item = UnrootedDom<'a, Node>> + 'a {
+        let name = name.clone();
+
+        self.get_document_element_unrooted(no_gc)
+            .into_iter()
+            .flat_map(move |element| {
+                element
+                    .upcast::<Node>()
+                    .traverse_preorder_non_rooting(no_gc, ShadowIncluding::No)
+            })
+            .filter(move |node| Document::is_element_in_get_by_name(node, &name))
+    }
+
     pub(crate) fn nth_element_by_name<'a>(
         &self,
         no_gc: &'a NoGC,
