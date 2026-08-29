@@ -118,13 +118,13 @@ impl NodeList {
 
 impl NodeListMethods<crate::DomTypeHolder> for NodeList {
     /// <https://dom.spec.whatwg.org/#dom-nodelist-length>
-    fn Length(&self) -> u32 {
+    fn Length(&self, no_gc: &NoGC) -> u32 {
         match self.list_type {
             NodeListType::Simple(ref elems) => elems.len() as u32,
             NodeListType::Children(ref list) => list.len(),
             NodeListType::Labels(ref list) => list.len(),
             NodeListType::Radio(ref list) => list.len(),
-            NodeListType::ElementsByName(ref list) => list.len(),
+            NodeListType::ElementsByName(ref list) => list.len(no_gc),
         }
     }
 
@@ -169,7 +169,7 @@ impl NodeList {
         &'a self,
         no_gc: &'a NoGC,
     ) -> impl Iterator<Item = UnrootedDom<'a, Node>> {
-        let len = self.Length();
+        let len = self.Length(no_gc);
         // There is room for optimization here in non-simple cases,
         // as calling Item repeatedly on a live list can involve redundant work.
         (0..len).flat_map(move |i| self.item_unrooted(no_gc, i))
@@ -304,7 +304,7 @@ impl ElementsByNameList {
         }
     }
 
-    pub(crate) fn len(&self) -> u32 {
+    pub(crate) fn len(&self, _no_gc: &NoGC) -> u32 {
         self.document.elements_by_name_count(&self.name)
     }
 
