@@ -4369,13 +4369,6 @@ impl Document {
         })
     }
 
-    pub(crate) fn elements_by_name_count(&self, name: &DOMString) -> u32 {
-        if name.is_empty() {
-            return 0;
-        }
-        self.count_node_list(|n| Document::is_element_in_get_by_name(n, name))
-    }
-
     pub(crate) fn elements_by_name_iter<'a>(
         &self,
         no_gc: &'a NoGC,
@@ -4393,20 +4386,6 @@ impl Document {
             .filter(move |node| Document::is_element_in_get_by_name(node, &name))
     }
 
-    pub(crate) fn nth_element_by_name<'a>(
-        &self,
-        no_gc: &'a NoGC,
-        index: u32,
-        name: &DOMString,
-    ) -> Option<UnrootedDom<'a, Node>> {
-        if name.is_empty() {
-            return None;
-        }
-        self.nth_in_node_list(no_gc, index, |n| {
-            Document::is_element_in_get_by_name(n, name)
-        })
-    }
-
     // Note that document.getByName does not match on the same conditions
     // as the document named getter.
     fn is_element_in_get_by_name(node: &Node, name: &DOMString) -> bool {
@@ -4418,29 +4397,6 @@ impl Document {
             return false;
         }
         element.get_name().is_some_and(|n| &*n == name)
-    }
-
-    fn count_node_list<F: Fn(&Node) -> bool>(&self, callback: F) -> u32 {
-        let doc = self.GetDocumentElement();
-        let maybe_node = doc.as_deref().map(Castable::upcast::<Node>);
-        maybe_node
-            .iter()
-            .flat_map(|node| node.traverse_preorder(ShadowIncluding::No))
-            .filter(|node| callback(node))
-            .count() as u32
-    }
-
-    fn nth_in_node_list<'a, F: Fn(&Node) -> bool>(
-        &self,
-        no_gc: &'a NoGC,
-        index: u32,
-        callback: F,
-    ) -> Option<UnrootedDom<'a, Node>> {
-        let doc = self.get_document_element_unrooted(no_gc)?;
-        doc.upcast::<Node>()
-            .traverse_preorder_non_rooting(no_gc, ShadowIncluding::No)
-            .filter(|node| callback(node))
-            .nth(index as usize)
     }
 
     fn get_html_element(&self) -> Option<DomRoot<HTMLHtmlElement>> {
